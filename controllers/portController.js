@@ -1,8 +1,12 @@
 const Port = require("../models/Port");
 
-// ➕ Add Port
+// =====================================
+// ➕ ADD PORT
+// =====================================
 exports.addPort = async (req, res) => {
+
   try {
+
     const {
       serverName,
       portNumber,
@@ -10,40 +14,79 @@ exports.addPort = async (req, res) => {
       service
     } = req.body;
 
-    // CHECK SAME PORT OR SAME KVM
-    const exists = await Port.findOne({
-      $or: [
-        { portNumber },
-        { service }
-      ]
-    });
+    // =========================
+    // CHECK EMPTY FIELDS
+    // =========================
 
-    if (exists) {
+    if (
+      !serverName ||
+      !portNumber ||
+      !website ||
+      !service
+    ) {
       return res.status(400).json({
-        message:
-          "Port number or KVM already exists"
+        message: "Please fill all fields"
       });
     }
 
-    // CREATE NEW PORT
-    const port = await Port.create({
-      serverName,
-      portNumber,
-      website,
-      service
+    // =========================
+    // CHECK SAME PORT IN SAME KVM
+    // =========================
+
+    const exists = await Port.findOne({
+      portNumber: Number(portNumber),
+      service: service.trim().toLowerCase()
     });
 
-    res.json(port);
+    // ❌ BLOCK ONLY SAME PORT + SAME KVM
+    if (exists) {
+
+      return res.status(400).json({
+        message:
+          `Port ${portNumber} already running on ${service}`
+      });
+
+    }
+
+    // =========================
+    // CREATE PORT
+    // =========================
+
+    const newPort = await Port.create({
+
+      serverName,
+
+      portNumber: Number(portNumber),
+
+      website,
+
+      service: service.trim().toLowerCase()
+
+    });
+
+    res.status(201).json({
+      message: "Port added successfully",
+      data: newPort
+    });
 
   } catch (err) {
+
+    console.log(err);
+
     res.status(500).json({
+      message: "Server error",
       error: err.message
     });
+
   }
+
 };
 
-// 📋 Get All Ports
+// =====================================
+// 📋 GET ALL PORTS
+// =====================================
 exports.getAllPorts = async (req, res) => {
+
   try {
 
     const ports = await Port.find().sort({
@@ -53,14 +96,20 @@ exports.getAllPorts = async (req, res) => {
     res.json(ports);
 
   } catch (err) {
+
     res.status(500).json({
-      error: err.message
+      message: "Failed to fetch ports"
     });
+
   }
+
 };
 
-// 🔍 Get Single Port
+// =====================================
+// 🔍 GET PORT
+// =====================================
 exports.getPort = async (req, res) => {
+
   try {
 
     const port = await Port.findOne({
@@ -68,66 +117,88 @@ exports.getPort = async (req, res) => {
     });
 
     if (!port) {
+
       return res.status(404).json({
         message: "Port not found"
       });
+
     }
 
     res.json(port);
 
   } catch (err) {
+
     res.status(500).json({
-      error: err.message
+      message: "Search failed"
     });
+
   }
+
 };
 
-// ✏️ Update Port
+// =====================================
+// ✏️ UPDATE PORT
+// =====================================
 exports.updatePort = async (req, res) => {
+
   try {
 
-    const updated = await Port.findOneAndUpdate(
-      {
-        portNumber: req.params.portNumber
-      },
-      {
-        serverName: req.body.serverName,
-        portNumber: req.body.portNumber,
-        website: req.body.website,
-        service: req.body.service
-      },
-      {
-        new: true
-      }
-    );
+    const updated =
+      await Port.findOneAndUpdate(
+
+        {
+          portNumber: req.params.portNumber
+        },
+
+        req.body,
+
+        {
+          new: true
+        }
+
+      );
 
     if (!updated) {
+
       return res.status(404).json({
         message: "Port not found"
       });
+
     }
 
-    res.json(updated);
+    res.json({
+      message: "Updated successfully",
+      data: updated
+    });
 
   } catch (err) {
+
     res.status(500).json({
-      error: err.message
+      message: "Update failed"
     });
+
   }
+
 };
 
-// ❌ Delete Port
+// =====================================
+// ❌ DELETE PORT
+// =====================================
 exports.deletePort = async (req, res) => {
+
   try {
 
-    const deleted = await Port.findOneAndDelete({
-      portNumber: req.params.portNumber
-    });
+    const deleted =
+      await Port.findOneAndDelete({
+        portNumber: req.params.portNumber
+      });
 
     if (!deleted) {
+
       return res.status(404).json({
         message: "Port not found"
       });
+
     }
 
     res.json({
@@ -135,8 +206,11 @@ exports.deletePort = async (req, res) => {
     });
 
   } catch (err) {
+
     res.status(500).json({
-      error: err.message
+      message: "Delete failed"
     });
+
   }
+
 };
