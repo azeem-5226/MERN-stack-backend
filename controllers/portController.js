@@ -10,16 +10,22 @@ exports.addPort = async (req, res) => {
       service
     } = req.body;
 
-    // Check existing port
-    const exists = await Port.findOne({ portNumber });
+    // CHECK SAME PORT OR SAME KVM
+    const exists = await Port.findOne({
+      $or: [
+        { portNumber },
+        { service }
+      ]
+    });
 
     if (exists) {
       return res.status(400).json({
-        message: "Port already exists"
+        message:
+          "Port number or KVM already exists"
       });
     }
 
-    // Create new port
+    // CREATE NEW PORT
     const port = await Port.create({
       serverName,
       portNumber,
@@ -28,6 +34,7 @@ exports.addPort = async (req, res) => {
     });
 
     res.json(port);
+
   } catch (err) {
     res.status(500).json({
       error: err.message
@@ -38,11 +45,13 @@ exports.addPort = async (req, res) => {
 // 📋 Get All Ports
 exports.getAllPorts = async (req, res) => {
   try {
+
     const ports = await Port.find().sort({
       portNumber: 1
     });
 
     res.json(ports);
+
   } catch (err) {
     res.status(500).json({
       error: err.message
@@ -53,6 +62,7 @@ exports.getAllPorts = async (req, res) => {
 // 🔍 Get Single Port
 exports.getPort = async (req, res) => {
   try {
+
     const port = await Port.findOne({
       portNumber: req.params.portNumber
     });
@@ -64,6 +74,7 @@ exports.getPort = async (req, res) => {
     }
 
     res.json(port);
+
   } catch (err) {
     res.status(500).json({
       error: err.message
@@ -74,6 +85,7 @@ exports.getPort = async (req, res) => {
 // ✏️ Update Port
 exports.updatePort = async (req, res) => {
   try {
+
     const updated = await Port.findOneAndUpdate(
       {
         portNumber: req.params.portNumber
@@ -96,6 +108,7 @@ exports.updatePort = async (req, res) => {
     }
 
     res.json(updated);
+
   } catch (err) {
     res.status(500).json({
       error: err.message
@@ -106,6 +119,7 @@ exports.updatePort = async (req, res) => {
 // ❌ Delete Port
 exports.deletePort = async (req, res) => {
   try {
+
     const deleted = await Port.findOneAndDelete({
       portNumber: req.params.portNumber
     });
@@ -119,6 +133,7 @@ exports.deletePort = async (req, res) => {
     res.json({
       message: "Deleted successfully"
     });
+
   } catch (err) {
     res.status(500).json({
       error: err.message
