@@ -2,7 +2,9 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+// ==============================
 // ✅ SIGNUP
+// ==============================
 exports.signup = async (req, res) => {
   try {
 
@@ -12,10 +14,9 @@ exports.signup = async (req, res) => {
       password
     } = req.body;
 
-    // CHECK USER
-    const existingUser = await User.findOne({
-      email
-    });
+    // CHECK EXISTING USER
+    const existingUser =
+      await User.findOne({ email });
 
     if (existingUser) {
       return res.status(400).json({
@@ -48,7 +49,9 @@ exports.signup = async (req, res) => {
   }
 };
 
+// ==============================
 // ✅ LOGIN
+// ==============================
 exports.login = async (req, res) => {
   try {
 
@@ -57,10 +60,9 @@ exports.login = async (req, res) => {
       password
     } = req.body;
 
-    // CHECK USER
-    const user = await User.findOne({
-      email
-    });
+    // FIND USER
+    const user =
+      await User.findOne({ email });
 
     if (!user) {
       return res.status(400).json({
@@ -81,7 +83,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    // TOKEN
+    // CREATE TOKEN
     const token = jwt.sign(
       {
         id: user._id
@@ -100,6 +102,50 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email
       }
+    });
+
+  } catch (err) {
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+};
+
+// ==============================
+// ✅ FORGOT PASSWORD
+// ==============================
+exports.forgotPassword = async (req, res) => {
+  try {
+
+    const {
+      email,
+      newPassword
+    } = req.body;
+
+    // FIND USER
+    const user =
+      await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    // HASH NEW PASSWORD
+    const hashedPassword =
+      await bcrypt.hash(newPassword, 10);
+
+    // UPDATE PASSWORD
+    user.password = hashedPassword;
+
+    await user.save();
+
+    res.json({
+      message:
+        "Password updated successfully"
     });
 
   } catch (err) {

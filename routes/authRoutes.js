@@ -3,13 +3,29 @@ const router = express.Router();
 
 const {
   signup,
-  login
+  login,
+  forgotPassword
 } = require("../controllers/authController");
 
-// SIGNUP
+
+// ==============================
+// ✅ SIGNUP
+// ==============================
 router.post("/signup", signup);
 
-// LOGIN
+
+// ==============================
+// ✅ LOGIN
+// ==============================
 router.post("/login", login);
+
+
+// ==============================
+// ✅ FORGOT PASSWORD
+// ==============================
+router.put(
+  "/forgot-password",
+  forgotPassword
+);
 
 module.exports = router;
