@@ -143,22 +143,24 @@ exports.updatePort = async (req, res) => {
 
   try {
 
-    const updated =
-      await Port.findOneAndUpdate(
+    const {
+      serverName,
+      portNumber,
+      website,
+      service
+    } = req.body;
 
-        {
-          portNumber: req.params.portNumber
-        },
+    // =========================
+    // FIND CURRENT PORT
+    // =========================
 
-        req.body,
+    const currentPort =
+      await Port.findOne({
+        portNumber:
+          req.params.portNumber
+      });
 
-        {
-          new: true
-        }
-
-      );
-
-    if (!updated) {
+    if (!currentPort) {
 
       return res.status(404).json({
         message: "Port not found"
@@ -166,15 +168,84 @@ exports.updatePort = async (req, res) => {
 
     }
 
+    // =========================
+    // CHECK DUPLICATE
+    // =========================
+
+    const duplicate =
+      await Port.findOne({
+
+        _id: {
+          $ne: currentPort._id
+        },
+
+        portNumber:
+          Number(portNumber),
+
+        service:
+          service
+            .trim()
+            .toLowerCase()
+
+      });
+
+    // ❌ BLOCK ONLY SAME PORT + SAME KVM
+
+    if (duplicate) {
+
+      return res.status(400).json({
+
+        message:
+          `Port ${portNumber} already exists on ${service}`
+
+      });
+
+    }
+
+    // =========================
+    // UPDATE
+    // =========================
+
+    currentPort.serverName =
+      serverName;
+
+    currentPort.portNumber =
+      Number(portNumber);
+
+    currentPort.website =
+      website;
+
+    currentPort.service =
+      service
+        .trim()
+        .toLowerCase();
+
+    await currentPort.save();
+
+    // =========================
+    // SUCCESS
+    // =========================
+
     res.json({
-      message: "Updated successfully",
-      data: updated
+
+      message:
+        "Port updated successfully",
+
+      data: currentPort
+
     });
 
   } catch (err) {
 
+    console.log(err);
+
     res.status(500).json({
-      message: "Update failed"
+
+      message:
+        "Update failed",
+
+      error: err.message
+
     });
 
   }
